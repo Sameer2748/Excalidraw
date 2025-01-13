@@ -1,0 +1,37 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id          Int      @id @default(autoincrement())
+  username        String
+  email       String   @unique
+  password    String
+  rooms       Room[]   @relation("RoomParticipants") // For many-to-many relationship
+  ownedRooms  Room[]   @relation("RoomOwner")        // For one-to-many relationship
+  createdAt   DateTime @default(now())
+}
+
+model Room {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     Json     // Store the serialized drawing state here
+  participants User[]   @relation("RoomParticipants") // Many-to-many relationship
+  ownerId     Int
+  owner       User      @relation("RoomOwner", fields: [ownerId], references: [id]) // One-to-many relationship
+  createdAt   DateTime  @default(now())
+  lastUpdated DateTime  @updatedAt // Automatically updates on changes
+}
+
