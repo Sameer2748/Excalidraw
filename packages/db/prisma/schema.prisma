@@ -19,19 +19,29 @@ model User {
   username        String
   email       String   @unique
   password    String
-  rooms       Room[]   @relation("RoomParticipants") // For many-to-many relationship
-  ownedRooms  Room[]   @relation("RoomOwner")        // For one-to-many relationship
+  photo       String?
+  rooms       Room[]
+  chats       Chat[]
   createdAt   DateTime @default(now())
 }
 
 model Room {
   id          Int      @id @default(autoincrement())
-  title       String
-  content     Json     // Store the serialized drawing state here
-  participants User[]   @relation("RoomParticipants") // Many-to-many relationship
-  ownerId     Int
-  owner       User      @relation("RoomOwner", fields: [ownerId], references: [id]) // One-to-many relationship
+  Slug        String   @unique
+  adminId     Int
+  admin       User      @relation(fields: [adminId], references:[id])
+  chats       Chat[]
   createdAt   DateTime  @default(now())
   lastUpdated DateTime  @updatedAt // Automatically updates on changes
+}
+
+model Chat{
+  id          Int      @id @default(autoincrement())
+  userId       Int
+  roomId       Int
+  message     String
+  room         Room     @relation(fields: [roomId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime  @default(now())
 }
 

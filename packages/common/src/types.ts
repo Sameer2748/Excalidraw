@@ -1,15 +1,21 @@
-import { z } from "zod";
-export const CreateUserSchema = z.object({
+const { z } = require("zod");
+const CreateUserSchema = z.object({
   username: z.string(),
   email: z.string().email(),
   password: z.string(),
 });
 
-export const SignInSchema = z.object({
+const SignInSchema = z.object({
   email: z.string().email(),
   password: z.string(),
 });
 
-export const RoomSchema = z.object({
+const RoomSchema = z.object({
   name: z.string().min(3).max(10),
 });
+
+module.exports = {
+  CreateUserSchema,
+  SignInSchema,
+  RoomSchema,
+};
