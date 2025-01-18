@@ -1,6 +1,7 @@
 import { WebSocket, WebSocketServer } from "ws";
 import jwt, { decode, JwtPayload } from "jsonwebtoken";
 const { JWT_SECRET } = require("@repo/backend-common/config");
+const client = require("@repo/db/client");
 
 // create a websocket server
 const wss = new WebSocketServer({ port: 8082 });
@@ -13,7 +14,24 @@ interface Users {
 
 const users: Users[] = [];
 
-const broadcastToRoom = (roomId: string, message: string, ws: WebSocket) => {
+const broadcastToRoom = async (
+  roomId: string,
+  message: string,
+  ws: WebSocket,
+  userId: string
+) => {
+  //TODO: add a queue like redis for no error and optimization
+
+  //store the chat in the backend
+  await client.chat.create({
+    data: {
+      userId: userId,
+      message,
+      roomId: parseInt(roomId),
+    },
+  });
+
+  // broadcast to every user
   const allusers = users.filter((user) => user.ws !== ws);
   allusers.forEach((user) => {
     if (user.rooms.includes(roomId)) {
@@ -83,7 +101,7 @@ wss.on("connection", (ws, request) => {
         break;
 
       case "chat":
-        broadcastToRoom(parsedData.roomId, parsedData.message, ws);
+        broadcastToRoom(parsedData.roomId, parsedData.message, ws, userId);
         break;
 
       default:
