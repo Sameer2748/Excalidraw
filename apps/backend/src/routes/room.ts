@@ -46,8 +46,9 @@ RoomRoutes.post(
       });
       console.log("Room created successfully:", room);
       res.json({ message: "Created room successfully", roomId: room.id });
-    } catch (error) {}
-    res.json({ message: "Creating room" });
+    } catch (error) {
+      res.status(401).json({ message: "error in Creating room" });
+    }
   }
 );
 
