@@ -16,7 +16,6 @@ RoomRoutes.get(
       const chats = await client.chat.findMany({
         where: { roomId: parseInt(roomId) },
         orderBy: { createdAt: "desc" },
-        take: 50,
       });
 
       console.log(chats);
@@ -70,4 +69,17 @@ RoomRoutes.get("/:slug", async (req, res) => {
       console.error("Error fetching room:", error);
       res.status(500).json({ message: "Error fetching room" });
     });
+});
+
+RoomRoutes.get("/", signInMiddleware, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const rooms = await client.room.findMany({ where: { adminId: userId } });
+    console.log(rooms);
+
+    res.json({ message: "room got succesfuuly", rooms });
+  } catch (error) {
+    console.error("Error fetching room:", error);
+    res.status(500).json({ message: "Error fetching room" });
+  }
 });

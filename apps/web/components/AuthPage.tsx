@@ -36,6 +36,9 @@ const AuthPage = ({ isSignIn }: { isSignIn: boolean }) => {
       console.log(user);
     } catch (error) {
       console.log(error);
+      if (error.status === 401) {
+        toast.error("Invalid credentials");
+      }
     }
   };
 

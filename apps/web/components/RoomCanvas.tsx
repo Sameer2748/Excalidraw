@@ -1,35 +1,40 @@
 "use client";
-import React from "react";
-import { useEffect, useRef, useState } from "react";
-import { initDraw } from "../draw";
+import React, { useEffect, useState } from "react";
 import { WS_URL } from "../app/config";
 import { Canvas } from "./Canvas";
+import { WebSocketService } from "../hooks/WebSocketService";
 
 export function RoomCanvas({ RoomId }: { RoomId: string }) {
-  const [socket, setSocket] = useState<WebSocket | null>();
+  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const wsService = WebSocketService.getInstance();
 
   useEffect(() => {
-    const ws = new WebSocket(
-      `${WS_URL}?token=${localStorage.getItem("token")}`
-    );
+    const connectWebSocket = async () => {
+      try {
+        const ws = await wsService.connect(
+          `${WS_URL}?token=${localStorage.getItem("token")}`
+        );
+        setSocket(ws);
 
-    ws.onopen = () => {
-      setSocket(ws);
-      ws.send(
-        JSON.stringify({
+        wsService.send({
           type: "room-join",
           roomId: RoomId,
-        })
-      );
+        });
+
+        return () => {
+          wsService.close();
+        };
+      } catch (error) {
+        console.error("Failed to connect:", error);
+      }
     };
 
-    return () => {
-      ws.close();
-    };
-  }, []);
+    connectWebSocket();
+  }, [RoomId]);
 
   if (!socket) {
     return <h1>Connecting to the server...</h1>;
   }
-  return <Canvas RoomId={RoomId} socket={socket} />;
+
+  return <Canvas RoomId={RoomId} socket={wsService} />;
 }
