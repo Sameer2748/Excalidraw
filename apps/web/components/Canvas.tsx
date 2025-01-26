@@ -93,25 +93,38 @@ export function Canvas({
           <p>Color</p>
           <div className="flex gap-2 p-1">
             <div
-              className=" w-[20px] h-[20px] rounded bg-[#d3d3d3] cursor-pointer"
+              className={`${currentColor === "#d3d3d3" ? "bg-[#403E6A] border border-[#a19ee0]" : "bg-gray-400"} p-1 rounded`}
               onClick={() => setCurrentColor("#d3d3d3")}
-            />
+            >
+              <div className=" w-[20px] h-[20px] rounded bg-[#d3d3d3] cursor-pointer " />
+            </div>
             <div
-              className=" w-[20px] h-[20px] rounded bg-[#f29b9e] cursor-pointer"
+              className={`${currentColor === "#f29b9e" ? "bg-[#403E6A] border border-[#a19ee0]" : "bg-gray-400"} p-1 rounded`}
               onClick={() => setCurrentColor("#f29b9e")}
-            />
+            >
+              <div className=" w-[20px] h-[20px] rounded bg-[#f29b9e] cursor-pointer" />
+            </div>
             <div
-              className=" w-[20px] h-[20px] rounded bg-[#4da153] cursor-pointer"
+              className={`${currentColor === "#4da153" ? "bg-[#403E6A] border border-[#a19ee0]" : "bg-gray-400"} p-1 rounded`}
               onClick={() => setCurrentColor("#4da153")}
-            />
+            >
+              <div
+                className=" w-[20px] h-[20px] rounded bg-[#4da153] cursor-pointer"
+                onClick={() => setCurrentColor("#4da153")}
+              />
+            </div>
             <div
-              className=" w-[20px] h-[20px] rounded bg-[#63b1f7] cursor-pointer"
+              className={`${currentColor === "#63b1f7" ? "bg-[#403E6A] border border-[#a19ee0]" : "bg-gray-400"} p-1 rounded`}
               onClick={() => setCurrentColor("#63b1f7")}
-            />
+            >
+              <div className=" w-[20px] h-[20px] rounded bg-[#63b1f7] cursor-pointer" />
+            </div>
             <div
-              className=" w-[20px] h-[20px] rounded bg-[#b7622a] cursor-pointer"
+              className={`${currentColor === "#b7622a" ? "bg-[#403E6A] border border-[#a19ee0]" : "bg-gray-400"} p-1 rounded`}
               onClick={() => setCurrentColor("#b7622a")}
-            />
+            >
+              <div className=" w-[20px] h-[20px] rounded bg-[#b7622a] cursor-pointer" />
+            </div>
           </div>
         </div>
         <div className=" flex flex-col gap-1">

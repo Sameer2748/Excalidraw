@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Request, Response, Router } from "express";
 import { signInMiddleware } from "../middlewares/signInMiddleware";
 const { RoomSchema } = require("@repo/common/types");
 const client = require("@repo/db/client");
@@ -26,6 +26,35 @@ RoomRoutes.get(
     }
   }
 );
+
+RoomRoutes.delete("/:id", signInMiddleware, async (req: any, res: any) => {
+  const userId = req.userId;
+  const id = req.params.id;
+
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    // Use transaction for atomicity
+    const transaction = await client.$transaction(async (client: any) => {
+      await client.chat.deleteMany({
+        where: { roomId: parseInt(id) },
+      });
+
+      // Delete the room
+      await client.room.delete({
+        where: { id: parseInt(id) },
+      });
+    });
+
+    res.status(200).json({ message: "Room deleted successfully" });
+  } catch (error) {
+    console.error("Error in deleting the room:", error);
+    res.status(500).json({ message: "Error in deleting the room", error });
+  }
+});
+
 RoomRoutes.post(
   "/create-room",
   signInMiddleware,
@@ -44,7 +73,7 @@ RoomRoutes.post(
         },
       });
       console.log("Room created successfully:", room);
-      res.json({ message: "Created room successfully", roomId: room.id });
+      res.json({ message: "Created room successfully", room });
     } catch (error) {
       res.status(401).json({ message: "error in Creating room" });
     }
