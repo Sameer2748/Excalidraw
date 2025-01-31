@@ -8,6 +8,7 @@ import { CgShapeRhombus } from "react-icons/cg";
 import { PiMinusBold } from "react-icons/pi";
 import { BsThreeDots } from "react-icons/bs";
 import { BsPencilSquare } from "react-icons/bs";
+import { FaHandBackFist } from "react-icons/fa6";
 
 import React, { useEffect, useRef, useState } from "react";
 import { initDraw } from "../draw";
@@ -23,7 +24,7 @@ export function Canvas({
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawInstanceRef = useRef<ReturnType<typeof initDraw> | null>(null);
-  const [currentShape, setCurrentShape] = useState("Rect");
+  const [currentShape, setCurrentShape] = useState("Hand");
   const [currentColor, setCurrentColor] = useState("white");
   const [currentStyle, setCurrentStyle] = useState("normal");
   const [currentSize, setCurrentSize] = useState(1);
@@ -175,6 +176,14 @@ export function Canvas({
         </div>
       </div>
       <div className="fixed top-0 right-[40%] right-4 flex gap-2 mt-5 bg-gray-400 px-10 gap-4 py-2 rounded-xl flex justify-between items-center">
+        <FaHandBackFist
+          color="white"
+          onClick={() => setCurrentShape("Hand")}
+          className={`p-1 rounded ${
+            currentShape === "Hand" ? "bg-blue-500" : ""
+          } text-black cursor-pointer`}
+          size={27}
+        />
         <BiRectangle
           color="white"
           onClick={() => setCurrentShape("Rect")}

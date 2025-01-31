@@ -2,6 +2,9 @@
 import axios from "axios";
 import { Backend_url } from "../app/config";
 import { WebSocketService } from "../hooks/WebSocketService";
+const { JWT_SECRET } = require("@repo/backend-common/config");
+import jwt from "jsonwebtoken";
+const client = require("@repo/db/client");
 
 type Point = {
   x: number;
@@ -10,6 +13,7 @@ type Point = {
 
 type Shape =
   | {
+      id?: number;
       type: "Rect";
       x: number;
       y: number;
@@ -20,6 +24,7 @@ type Shape =
       style?: string;
     }
   | {
+      id?: number;
       type: "Circle";
       centerX: number;
       centerY: number;
@@ -29,6 +34,7 @@ type Shape =
       style?: string;
     }
   | {
+      id?: number;
       type: "Line";
       startX: number;
       startY: number;
@@ -39,6 +45,7 @@ type Shape =
       style?: string;
     }
   | {
+      id?: number;
       type: "DiagonalRect";
       centerX: number;
       centerY: number;
@@ -50,6 +57,7 @@ type Shape =
       style?: string;
     }
   | {
+      id?: number;
       type: "RegularPolygon";
       centerX: number;
       centerY: number;
@@ -60,6 +68,7 @@ type Shape =
       style?: string;
     }
   | {
+      id?: number;
       type: "Input";
       x: number;
       y: number;
@@ -68,6 +77,7 @@ type Shape =
       color?: string;
     }
   | {
+      id?: number;
       type: "editedText";
       originalX: number;
       originalY: number;
@@ -83,7 +93,7 @@ export function initDraw(
   RoomId: string,
   wsService: WebSocketService
 ) {
-  let currentShape = "Rect";
+  let currentShape = "";
   let currentColor = "white";
   let currentBorder = 1;
   let currentStyle = "normal";
@@ -91,6 +101,11 @@ export function initDraw(
   let startX = 0;
   let startY = 0;
   let Shapes: Shape[] = [];
+  let selectedShape: {
+    index: number;
+    offsetX: number;
+    offsetY: number;
+  } | null = null;
   const ctx = canvas.getContext("2d");
 
   // Text input state
@@ -229,10 +244,186 @@ export function initDraw(
     };
   };
 
+  // drag and drop
+  // Function to check if a point is inside a shape
+  const isPointInShape = (x: number, y: number, shape: Shape): boolean => {
+    switch (shape.type) {
+      case "Rect":
+        return (
+          x >= shape.x &&
+          x <= shape.x + shape.width &&
+          y >= shape.y &&
+          y <= shape.y + shape.height
+        );
+      case "Circle":
+        const distance = Math.hypot(x - shape.centerX, y - shape.centerY);
+        return distance <= shape.radius;
+      case "Line":
+        // Check if point is close to the line
+        const lineDistance = pointToLineDistance(
+          x,
+          y,
+          shape.startX,
+          shape.startY,
+          shape.endX,
+          shape.endY
+        );
+        return lineDistance <= 5; // 5px threshold
+      case "DiagonalRect":
+        // Transform point to check against rotated rectangle
+        const rotatedPoint = rotatePoint(
+          x,
+          y,
+          shape.centerX,
+          shape.centerY,
+          -shape.angle
+        );
+        return (
+          rotatedPoint.x >= shape.centerX &&
+          rotatedPoint.x <= shape.centerX + shape.width &&
+          rotatedPoint.y >= shape.centerY - shape.height / 2 &&
+          rotatedPoint.y <= shape.centerY + shape.height / 2
+        );
+      case "RegularPolygon":
+        const points = calculateRegularPolygonPoints(
+          shape.centerX,
+          shape.centerY,
+          shape.sideLength,
+          shape.rotation
+        );
+        return isPointInPolygon(x, y, points);
+      case "Input":
+        const bounds = getTextBounds(shape.text, shape.x, shape.y);
+        return (
+          x >= bounds.x &&
+          x <= bounds.x + bounds.width &&
+          y >= bounds.y &&
+          y <= bounds.y + bounds.height
+        );
+      default:
+        return false;
+    }
+  };
+
+  // Helper function to calculate point to line distance
+  const pointToLineDistance = (
+    x: number,
+    y: number,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number
+  ): number => {
+    const A = x - x1;
+    const B = y - y1;
+    const C = x2 - x1;
+    const D = y2 - y1;
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    let param = -1;
+    if (lenSq !== 0) param = dot / lenSq;
+    let xx, yy;
+    if (param < 0) {
+      xx = x1;
+      yy = y1;
+    } else if (param > 1) {
+      xx = x2;
+      yy = y2;
+    } else {
+      xx = x1 + param * C;
+      yy = y1 + param * D;
+    }
+    return Math.hypot(x - xx, y - yy);
+  };
+
+  // Helper function to rotate a point
+  const rotatePoint = (
+    x: number,
+    y: number,
+    cx: number,
+    cy: number,
+    angle: number
+  ) => {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const dx = x - cx;
+    const dy = y - cy;
+    return {
+      x: cx + dx * cos - dy * sin,
+      y: cy + dx * sin + dy * cos,
+    };
+  };
+
+  // Helper function to check if point is inside polygon
+  const isPointInPolygon = (x: number, y: number, points: Point[]): boolean => {
+    let inside = false;
+    for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+      const xi = points[i].x,
+        yi = points[i].y;
+      const xj = points[j].x,
+        yj = points[j].y;
+      const intersect =
+        yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  };
+  // Helper functions to get offset based on shape type
+  const getOffsetX = (clickX: number, shape: Shape): number => {
+    switch (shape.type) {
+      case "Rect":
+        return clickX - shape.x;
+      case "Circle":
+        return clickX - shape.centerX;
+      case "Line":
+        return clickX - shape.startX;
+      case "DiagonalRect":
+      case "RegularPolygon":
+        return clickX - shape.centerX;
+      case "Input":
+        return clickX - shape.x;
+      default:
+        return 0;
+    }
+  };
+
+  const getOffsetY = (clickY: number, shape: Shape): number => {
+    switch (shape.type) {
+      case "Rect":
+        return clickY - shape.y;
+      case "Circle":
+        return clickY - shape.centerY;
+      case "Line":
+        return clickY - shape.startY;
+      case "DiagonalRect":
+      case "RegularPolygon":
+        return clickY - shape.centerY;
+      case "Input":
+        return clickY - shape.y;
+      default:
+        return 0;
+    }
+  };
+
   const handleClick = (e: MouseEvent) => {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+
+    if (currentShape === "Hand") {
+      // Check if we clicked on any shape
+      for (let i = Shapes.length - 1; i >= 0; i--) {
+        if (isPointInShape(x, y, Shapes[i])) {
+          selectedShape = {
+            index: i,
+            offsetX: getOffsetX(x, Shapes[i]),
+            offsetY: getOffsetY(y, Shapes[i]),
+          };
+          clicked = true;
+          return;
+        }
+      }
+    }
 
     // Handle text submission when clicking outside active text
     if (textInputActive && activeText) {
@@ -285,91 +476,185 @@ export function initDraw(
     startX = x;
     startY = y;
   };
+  // When updating a shape's position
+  const updateShapePosition = (shape: Shape) => {
+    wsService.send({
+      type: "update-shape",
+      roomId: RoomId,
+      shapeId: shape.id, // Ensure shape has an ID
+      shapeData: shape,
+    });
+  };
 
-  const mouseupHandler = (e: MouseEvent) => {
-    if (textInputActive || currentShape === "Input") return;
+  const mouseupHandler = async (e: MouseEvent) => {
     if (!clicked) return;
     clicked = false;
+
+    // If we're handling text input, return early
+    if (textInputActive || currentShape === "Input") return;
 
     const rect = canvas.getBoundingClientRect();
     const currentX = e.clientX - rect.left;
     const currentY = e.clientY - rect.top;
 
-    let shape: Shape;
-    if (currentShape === "Rect") {
-      shape = {
-        type: "Rect",
-        x: startX,
-        y: startY,
-        width: currentX - startX,
-        height: currentY - startY,
-        border: currentBorder,
-        color: currentColor,
-        style: currentStyle,
-      };
-    } else if (currentShape === "Circle") {
-      shape = {
-        type: "Circle",
-        centerX: startX,
-        centerY: startY,
-        radius: Math.hypot(currentX - startX, currentY - startY),
-        border: currentBorder,
-        color: currentColor,
-        style: currentStyle,
-      };
-    } else if (currentShape === "Line") {
-      shape = {
-        type: "Line",
-        startX: startX,
-        startY: startY,
-        endX: currentX,
-        endY: currentY,
-        border: currentBorder,
-        color: currentColor,
-        style: currentStyle,
-      };
-    } else if (currentShape === "DiagonalRect") {
-      shape = {
-        type: "DiagonalRect",
-        centerX: startX,
-        centerY: startY,
-        width: Math.hypot(currentX - startX, currentY - startY),
-        height: 100,
-        angle: Math.atan2(currentY - startY, currentX - startX),
-        border: currentBorder,
-        color: currentColor,
-        style: currentStyle,
-      };
-    } else if (currentShape === "RegularPolygon") {
-      shape = {
-        type: "RegularPolygon",
-        centerX: startX,
-        centerY: startY,
-        sideLength: Math.hypot(currentX - startX, currentY - startY),
-        rotation: Math.atan2(currentY - startY, currentX - startX),
-        border: currentBorder,
-        color: currentColor,
-        style: currentStyle,
-      };
-    } else {
+    // Handle shape dragging
+    if (currentShape === "Hand" && selectedShape !== null) {
+      // Send updated shape position to server
+      wsService.send({
+        type: "update-shape",
+        roomId: RoomId,
+        shapeId: Shapes[selectedShape.index]?.id, // Ensure the shape has an ID
+        shapeData: Shapes[selectedShape.index], // Send the entire updated shape
+      });
+      selectedShape = null;
       return;
     }
 
-    Shapes.push(shape);
-    wsService.send({
-      type: "chat",
-      roomId: RoomId,
-      message: JSON.stringify(shape),
-    });
-    drawCanvas();
-  };
+    // Handle drawing new shapes
+    let shape: Shape | undefined;
 
+    switch (currentShape) {
+      case "Rect":
+        shape = {
+          type: "Rect",
+          x: startX,
+          y: startY,
+          width: currentX - startX,
+          height: currentY - startY,
+          border: currentBorder,
+          color: currentColor,
+          style: currentStyle,
+        };
+        break;
+      case "Circle":
+        shape = {
+          type: "Circle",
+          centerX: startX,
+          centerY: startY,
+          radius: Math.hypot(currentX - startX, currentY - startY),
+          border: currentBorder,
+          color: currentColor,
+          style: currentStyle,
+        };
+        break;
+      case "Line":
+        shape = {
+          type: "Line",
+          startX: startX,
+          startY: startY,
+          endX: currentX,
+          endY: currentY,
+          border: currentBorder,
+          color: currentColor,
+          style: currentStyle,
+        };
+        break;
+      case "DiagonalRect":
+        shape = {
+          type: "DiagonalRect",
+          centerX: startX,
+          centerY: startY,
+          width: Math.hypot(currentX - startX, currentY - startY),
+          height: 100,
+          angle: Math.atan2(currentY - startY, currentX - startX),
+          border: currentBorder,
+          color: currentColor,
+          style: currentStyle,
+        };
+        break;
+      case "RegularPolygon":
+        shape = {
+          type: "RegularPolygon",
+          centerX: startX,
+          centerY: startY,
+          sideLength: Math.hypot(currentX - startX, currentY - startY),
+          rotation: Math.atan2(currentY - startY, currentX - startX),
+          border: currentBorder,
+          color: currentColor,
+          style: currentStyle,
+        };
+        break;
+    }
+
+    // If a valid shape was created, add it and send to server
+    if (shape) {
+      // First create the shape in database
+      axios
+        .post(
+          `${Backend_url}/room/${RoomId}/shape`,
+          {
+            message: JSON.stringify(shape),
+          },
+          {
+            headers: { Authorization: `${localStorage.getItem("token")}` },
+          }
+        )
+        .then((response) => {
+          // Add shape with ID to local array
+          const shapeWithId = {
+            ...shape,
+            id: response.data.id, // Assuming response includes the created shape's ID
+          };
+          Shapes.push(shapeWithId);
+
+          // Then broadcast to other users
+          wsService.send({
+            type: "chat",
+            roomId: RoomId,
+            message: JSON.stringify(shapeWithId), // Include the ID in broadcast
+          });
+
+          drawCanvas();
+        })
+        .catch((error) => {
+          console.error("Error creating shape:", error);
+        });
+    }
+  };
   const mousemoveHandler = (e: MouseEvent) => {
     if (!clicked || textInputActive || currentShape === "Input") return;
 
     const rect = canvas.getBoundingClientRect();
     const currentX = e.clientX - rect.left;
     const currentY = e.clientY - rect.top;
+
+    if (currentShape === "Hand" && selectedShape !== null) {
+      const shape: Shape = Shapes[selectedShape.index];
+      const newX = currentX - selectedShape.offsetX;
+      const newY = currentY - selectedShape.offsetY;
+
+      // Update shape position based on type
+      switch (shape.type) {
+        case "Rect":
+          shape.x = newX;
+          shape.y = newY;
+          break;
+        case "Circle":
+          shape.centerX = newX;
+          shape.centerY = newY;
+          break;
+        case "Line":
+          const dx = newX - shape.startX;
+          const dy = newY - shape.startY;
+          shape.startX = newX;
+          shape.startY = newY;
+          shape.endX += dx;
+          shape.endY += dy;
+          break;
+        case "DiagonalRect":
+        case "RegularPolygon":
+          shape.centerX = newX;
+          shape.centerY = newY;
+          break;
+        case "Input":
+          shape.x = newX;
+          shape.y = newY;
+          break;
+      }
+
+      drawCanvas();
+      return;
+    }
 
     drawCanvas();
     ctx.strokeStyle = currentColor;
@@ -424,35 +709,25 @@ export function initDraw(
   const messageHandler = (event: MessageEvent) => {
     try {
       const data = JSON.parse(event.data);
-      if (data.type === "chat") {
-        const shape: Shape = JSON.parse(data.message);
+      if (data.type === "updated-shape") {
+        const shapeIndex = Shapes.findIndex(
+          (shape) => shape.id === data.shapeId
+        );
 
-        if (shape.type === "editedText") {
-          // Find and update existing text
-          const originalIndex = Shapes.findIndex(
-            (s) =>
-              s.type === "Input" &&
-              s.x === shape.originalX &&
-              s.y === shape.originalY
-          );
-
-          if (originalIndex !== -1) {
-            Shapes[originalIndex] = {
-              type: "Input",
-              x: shape.newX,
-              y: shape.newY,
-              text: shape.text,
-              fontSize: shape.fontSize,
-              color: shape.color,
-            };
-          }
-        } else if (
-          !Shapes.some((s) => JSON.stringify(s) === JSON.stringify(shape))
-        ) {
-          Shapes.push(shape);
+        if (shapeIndex !== -1) {
+          Shapes[shapeIndex] = {
+            ...Shapes[shapeIndex],
+            ...data.shape,
+          };
+          drawCanvas();
         }
-
-        drawCanvas();
+      } else if (data.type === "chat") {
+        const shape: Shape = JSON.parse(data.message);
+        // Only add if shape doesn't exist (checking by ID now)
+        if (!Shapes.some((s) => s.id === shape.id)) {
+          Shapes.push(shape);
+          drawCanvas();
+        }
       }
     } catch (error) {
       console.error("Error handling message:", error);
@@ -567,16 +842,17 @@ export function initDraw(
   wsService.addMessageHandler(messageHandler);
   canvas.tabIndex = 0;
 
-  // Load initial shapes
+  // Modify initial shape loading to preserve IDs
   axios
     .get(`${Backend_url}/room/chats/${RoomId}`, {
       headers: { Authorization: `${localStorage.getItem("token")}` },
     })
     .then((res) => {
       try {
-        Shapes = res.data.chats.map((x: { message: string }) =>
-          JSON.parse(x.message)
-        );
+        Shapes = res.data.chats.map((x: { id: number; message: string }) => ({
+          ...JSON.parse(x.message),
+          id: x.id,
+        }));
         drawCanvas();
       } catch (error) {
         console.error("Error loading initial shapes:", error);
@@ -587,7 +863,10 @@ export function initDraw(
   drawCanvas();
 
   return {
-    setCurrentShape: (newShape: string) => (currentShape = newShape),
+    setCurrentShape: (newShape: string) => {
+      currentShape = newShape;
+      selectedShape = null; // Reset selection when changing tools
+    },
     setCurrentColor: (newColor: string) => (currentColor = newColor),
     setCurrentWidth: (newWidth: number) => (currentBorder = newWidth),
     setCurrentStyle: (newStyle: string) => (currentStyle = newStyle),
@@ -645,3 +924,5 @@ function drawArrowhead(
   );
   ctx.stroke();
 }
+
+// adding changing shaped position like pick and drop

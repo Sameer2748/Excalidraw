@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@repo/ui": "workspace:*",
+    "@types/jsonwebtoken": "^9.0.7",
     "axios": "^1.7.9",
+    "jsonwebtoken": "^9.0.2",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -20,8 +22,10 @@
     "sonner": "^1.7.2"
   },
   "devDependencies": {
+    "@repo/backend-common": "workspace:*",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
+    "@repo/db": "workspace:*",
     "@types/node": "^20",
     "@types/react": "18.3.1",
     "@types/react-dom": "18.3.0",

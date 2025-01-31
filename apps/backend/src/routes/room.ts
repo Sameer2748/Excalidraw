@@ -112,3 +112,51 @@ RoomRoutes.get("/", signInMiddleware, async (req, res) => {
     res.status(500).json({ message: "Error fetching room" });
   }
 });
+
+RoomRoutes.put(
+  "/update-shape/:shapeId",
+  signInMiddleware,
+  async (req: any, res: any) => {
+    const { shapeId } = req.params;
+    const shapeData = req.body;
+
+    try {
+      // Update shape in the database
+      const updatedShape = await client.chat.update({
+        where: { id: parseInt(shapeId) },
+        data: {
+          message: JSON.stringify(shapeData),
+        },
+      });
+
+      res.json({
+        message: "Shape updated successfully",
+        shape: updatedShape,
+      });
+    } catch (error) {
+      console.error("Error updating shape:", error);
+      res.status(500).json({ message: "Error updating shape" });
+    }
+  }
+);
+
+RoomRoutes.post("/:roomId/shape", signInMiddleware, async (req, res) => {
+  try {
+    const { roomId }: any = req.params;
+    const { message } = req.body;
+    const userId = req.userId; // From your auth middleware
+
+    const newShape = await client.chat.create({
+      data: {
+        userId,
+        message,
+        roomId: parseInt(roomId),
+      },
+    });
+
+    res.json({ id: newShape.id });
+  } catch (error) {
+    console.error("Error creating shape:", error);
+    res.status(500).json({ error: "Failed to create shape" });
+  }
+});

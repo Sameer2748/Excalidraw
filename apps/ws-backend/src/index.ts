@@ -23,13 +23,13 @@ const broadcastToRoom = async (
   //TODO: add a queue like redis for no error and optimization
 
   //store the chat in the backend
-  await client.chat.create({
-    data: {
-      userId: userId,
-      message,
-      roomId: parseInt(roomId),
-    },
-  });
+  // await client.chat.create({
+  //   data: {
+  //     userId: userId,
+  //     message,
+  //     roomId: parseInt(roomId),
+  //   },
+  // });
 
   // broadcast to every user
   const allusers = users.filter((user) => user.ws !== ws);
@@ -102,6 +102,34 @@ wss.on("connection", (ws, request) => {
 
       case "chat":
         broadcastToRoom(parsedData.roomId, parsedData.message, ws, userId);
+        break;
+      case "update-shape":
+        try {
+          // Update shape in database
+          const updatedShape = await client.chat.update({
+            where: { id: parseInt(parsedData.shapeId) },
+            data: {
+              message: JSON.stringify(parsedData.shapeData),
+            },
+          });
+
+          // Broadcast updated shape to all users in the room
+          const allusers = users.filter((user) => user.ws !== ws);
+          allusers.forEach((user) => {
+            if (user.rooms.includes(parsedData.roomId)) {
+              user.ws.send(
+                JSON.stringify({
+                  type: "updated-shape",
+                  roomId: parsedData.roomId,
+                  shapeId: parsedData.shapeId,
+                  shape: parsedData.shapeData,
+                })
+              );
+            }
+          });
+        } catch (error) {
+          console.error("Error updating shape:", error);
+        }
         break;
 
       default:
