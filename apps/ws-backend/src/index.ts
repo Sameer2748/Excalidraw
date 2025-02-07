@@ -20,22 +20,30 @@ const broadcastToRoom = async (
   ws: WebSocket,
   userId: string
 ) => {
-  //TODO: add a queue like redis for no error and optimization
-
-  //store the chat in the backend
-  // await client.chat.create({
-  //   data: {
-  //     userId: userId,
-  //     message,
-  //     roomId: parseInt(roomId),
-  //   },
-  // });
-
-  // broadcast to every user
   const allusers = users.filter((user) => user.ws !== ws);
   allusers.forEach((user) => {
     if (user.rooms.includes(roomId)) {
       user.ws.send(JSON.stringify({ type: "chat", message, roomId }));
+    }
+  });
+};
+
+// New function to broadcast shape deletion
+const broadcastShapeDeletion = async (
+  roomId: string,
+  shapeId: number,
+  ws: WebSocket
+) => {
+  const allusers = users.filter((user) => user.ws !== ws);
+  allusers.forEach((user) => {
+    if (user.rooms.includes(roomId)) {
+      user.ws.send(
+        JSON.stringify({
+          type: "delete-shape",
+          roomId,
+          shapeId,
+        })
+      );
     }
   });
 };
@@ -58,7 +66,7 @@ const checkUser = (token: string): string | null => {
 };
 
 wss.on("connection", (ws, request) => {
-  console.log("connwction created");
+  console.log("connection created");
   const url = request.url;
   if (!url) {
     return;
@@ -82,10 +90,8 @@ wss.on("connection", (ws, request) => {
 
     switch (parsedData.type) {
       case "room-join":
-        // find user with their websocket connection when try to join some room
         const user = users.find((u) => u.ws === ws);
         user?.rooms.push(parsedData.roomId);
-
         break;
 
       case "leave-room":
@@ -96,16 +102,15 @@ wss.on("connection", (ws, request) => {
         leavinguser.rooms = leavinguser?.rooms.filter(
           (roomId) => roomId !== parsedData.roomId
         );
-
         console.log(leavinguser.rooms);
         break;
 
       case "chat":
         broadcastToRoom(parsedData.roomId, parsedData.message, ws, userId);
         break;
+
       case "update-shape":
         try {
-          // Update shape in database
           const updatedShape = await client.chat.update({
             where: { id: parseInt(parsedData.shapeId) },
             data: {
@@ -113,7 +118,6 @@ wss.on("connection", (ws, request) => {
             },
           });
 
-          // Broadcast updated shape to all users in the room
           const allusers = users.filter((user) => user.ws !== ws);
           allusers.forEach((user) => {
             if (user.rooms.includes(parsedData.roomId)) {
@@ -132,8 +136,29 @@ wss.on("connection", (ws, request) => {
         }
         break;
 
+      case "delete-shape":
+        try {
+          // Broadcast deletion to all users in the room
+          await broadcastShapeDeletion(
+            parsedData.roomId,
+            parseInt(parsedData.shapeId),
+            ws
+          );
+        } catch (error) {
+          console.error("Error deleting shape:", error);
+        }
+        break;
+
       default:
         break;
+    }
+  });
+
+  // Handle disconnection
+  ws.on("close", () => {
+    const index = users.findIndex((user) => user.ws === ws);
+    if (index !== -1) {
+      users.splice(index, 1);
     }
   });
 });

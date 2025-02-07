@@ -1,4 +1,5 @@
 import { Request, Response, Router } from "express";
+import { RequestHandler } from "express";
 import { signInMiddleware } from "../middlewares/signInMiddleware";
 const { RoomSchema } = require("@repo/common/types");
 const client = require("@repo/db/client");
@@ -160,3 +161,49 @@ RoomRoutes.post("/:roomId/shape", signInMiddleware, async (req, res) => {
     res.status(500).json({ error: "Failed to create shape" });
   }
 });
+
+// Delete shape route
+const deleteShape: RequestHandler = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const shapeId: any = req.params.shapeId;
+  const roomId: any = req.params.roomId;
+
+  try {
+    const parsedShapeId = parseInt(shapeId);
+
+    const shape = await client.chat.findFirst({
+      where: {
+        id: parsedShapeId,
+        roomId: parseInt(roomId),
+      },
+    });
+
+    if (!shape) {
+      res.status(404).json({
+        message: "Shape not found or does not belong to this room",
+      });
+      return;
+    }
+
+    const deletedShape = await client.chat.delete({
+      where: { id: parsedShapeId },
+    });
+
+    res.json({
+      message: "Shape deleted successfully",
+      data: deletedShape,
+    });
+    return;
+  } catch (error) {
+    console.error("Error deleting shape:", error);
+    res.status(500).json({
+      message: "Error deleting the shape",
+      error: error,
+    });
+    return;
+  }
+};
+
+RoomRoutes.post("/:roomId/:shapeId", signInMiddleware, deleteShape);
