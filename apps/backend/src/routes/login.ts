@@ -4,6 +4,7 @@ const { JWT_SECRET } = require("@repo/backend-common/config");
 const { CreateUserSchema } = require("@repo/common/types");
 const client = require("@repo/db/client");
 import jwt from "jsonwebtoken";
+import { signInMiddleware } from "../middlewares/signInMiddleware";
 
 const userRoutes: Router = Router();
 
@@ -60,6 +61,23 @@ userRoutes.post("/signIn", async (req: any, res: any) => {
 
     res.json({ token });
   } catch (error) {}
+});
+
+userRoutes.get("/", signInMiddleware, async (req, res) => {
+  const userId = req.userId;
+  console.log(userId);
+
+  try {
+    const user = await client.user.findUnique({
+      where: { id: userId },
+    });
+    console.log(user);
+
+    res.json({ message: "User fetched successfully", user });
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).json({ message: "Error fetching user" });
+  }
 });
 
 export default userRoutes;

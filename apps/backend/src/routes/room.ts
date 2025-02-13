@@ -114,6 +114,39 @@ RoomRoutes.get("/", signInMiddleware, async (req, res) => {
   }
 });
 
+RoomRoutes.get("/:id", signInMiddleware, async (req, res) => {
+  const userId = req.userId;
+  const roomId = parseInt(req.body.roomId);
+
+  if (!userId) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  if (!roomId || isNaN(roomId)) {
+    res.status(400).json({ message: "Invalid room ID" });
+    return;
+  }
+
+  try {
+    console.log("Fetching room with ID:", roomId);
+
+    const room = await client.room.findUnique({
+      where: { id: roomId },
+    });
+
+    if (!room) {
+      res.status(404).json({ message: "Room not found" });
+      return;
+    }
+
+    res.json({ message: "Room found", room });
+  } catch (error) {
+    console.error("Error fetching room:", error);
+    res.status(500).json({ message: "Error fetching room details" });
+  }
+});
+
 RoomRoutes.put(
   "/update-shape/:shapeId",
   signInMiddleware,

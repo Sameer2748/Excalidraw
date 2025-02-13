@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 8083;
 app.use(
   cors({
-    origin: "http://localhost:3000", // your frontend URL
+    origin: ["http://localhost:3000", "https://excalfnt.100xsam.store"], // your frontend URL
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: [
