@@ -44,17 +44,17 @@ const DashboardPage = () => {
         setRooms(res.data.rooms);
         setLoading(false);
       } catch (error) {
-        console.log("error in fetching rooms");
+        console.log("error in fetching rooms", error);
         setLoading(false);
       }
     };
     fetchRooms();
-  }, []);
+  }, [Router]);
 
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this room?")) {
       try {
-        const res = await axios.delete(`${Backend_url}/room/${id}`, {
+        await axios.delete(`${Backend_url}/room/${id}`, {
           headers: {
             Authorization: `${localStorage.getItem("token")}`,
           },
@@ -87,7 +87,7 @@ const DashboardPage = () => {
       console.log("Room created successfully");
       toast.success("Room created successfully");
     } catch (error) {
-      console.log("error in Creating");
+      console.log("error in Creating", error);
       toast.error("Room creation error");
     }
   };
@@ -134,7 +134,7 @@ const DashboardPage = () => {
       {going && (
         <div className="inset-0 fixed flex justify-center items-center bg-black bg-opacity-50 z-50">
           <h1 className="text-center text-2xl text-white">
-            Going to Cnavas Let's go...
+            Going to Cnavas Lets go...
           </h1>
         </div>
       )}

@@ -15,7 +15,7 @@ const getRoomChats = async (roomId: number) => {
 
   return chats.data.chats;
 };
-const ChatRoom = async ({ id }: { id: any }) => {
+const ChatRoom = async ({ id }: { id: number }) => {
   console.log(id);
 
   const chats = await getRoomChats(id);

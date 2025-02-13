@@ -99,7 +99,7 @@ const AuthPage = ({ isSignIn }: { isSignIn: boolean }) => {
           <div className="text-center text-sm text-gray-600">
             {isSignIn ? (
               <p onClick={() => Router.push("/signUp")}>
-                Don't have an account?{" "}
+                Dont have an account?{" "}
                 <p className="text-blue-600 hover:underline cursor-pointer">
                   Sign up
                 </p>

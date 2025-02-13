@@ -1,11 +1,6 @@
-import React from "react";
-
 import { RoomCanvas } from "../../../components/RoomCanvas";
 
-const page = ({ params }: { params: { roomId: string } }) => {
-  const roomId = params.roomId;
-
-  return <RoomCanvas RoomId={roomId} />;
-};
-
-export default page;
+export default async function Page({ params }: { params: { roomId: string } }) {
+  // You no longer need to await params here because Next.js passes params as an object.
+  return <RoomCanvas RoomId={params.roomId} />;
+}

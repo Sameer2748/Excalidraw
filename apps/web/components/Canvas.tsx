@@ -3,7 +3,7 @@
 import { BiRectangle } from "react-icons/bi";
 import { FaRegCircle } from "react-icons/fa";
 import { IoArrowForwardOutline } from "react-icons/io5";
-import { RiSquareLine } from "react-icons/ri";
+
 import { CgShapeRhombus } from "react-icons/cg";
 import { PiMinusBold } from "react-icons/pi";
 import { BsThreeDots } from "react-icons/bs";

@@ -1,4 +1,3 @@
-import { Button } from "@repo/ui/button";
 import Navbar from "../components/Navbar";
 import { FeatureCard } from "@repo/ui/FeatureCard";
 
@@ -19,7 +18,7 @@ const Index = (): JSX.Element => {
           </p>
           <div className="flex gap-4 justify-center animate-fade-up">
             <button className="bg-primary hover:bg-primary-hover text-white">
-              Try Now - It's Free
+              Try Now - Its Free
             </button>
             <button className="border-primary text-primary hover:bg-primary/10">
               Watch Demo

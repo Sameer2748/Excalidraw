@@ -30,7 +30,7 @@ export function RoomCanvas({ RoomId }: { RoomId: string }) {
     };
 
     connectWebSocket();
-  }, [RoomId]);
+  }, [RoomId, wsService]);
 
   if (!socket) {
     return <h1>Connecting to the server...</h1>;
