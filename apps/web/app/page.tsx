@@ -1,9 +1,12 @@
 import Navbar from "../components/Navbar";
 import { FeatureCard } from "@repo/ui/FeatureCard";
+import Checker from "../hooks/Checker";
 
 const Index = (): JSX.Element => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-purple-50">
+      <Checker />
+
       <Navbar />
 
       {/* Hero Section */}

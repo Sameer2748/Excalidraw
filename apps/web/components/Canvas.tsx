@@ -13,6 +13,7 @@ import { FaHandBackFist } from "react-icons/fa6";
 import React, { useEffect, useRef, useState } from "react";
 import { initDraw } from "../draw";
 import { WebSocketService } from "../hooks/WebSocketService";
+import { useRouter } from "next/router";
 
 export function Canvas({
   RoomId,
@@ -21,6 +22,7 @@ export function Canvas({
   RoomId: string;
   socket: WebSocketService;
 }) {
+  const Router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawInstanceRef = useRef<ReturnType<typeof initDraw> | null>(null);
@@ -32,6 +34,10 @@ export function Canvas({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const token = localStorage.getItem("token");
+    if (!token) {
+      Router.push("/signIn");
+    }
 
     // Only initialize once
     if (!drawInstanceRef.current) {

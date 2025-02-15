@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { Backend_url } from "../config";
 import { toast, Toaster } from "sonner";
 import { MdDelete } from "react-icons/md";
+import Checker from "../../hooks/Checker";
 
 interface Room {
   id: number;
@@ -106,6 +107,7 @@ const DashboardPage = () => {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-blue-500 to-purple-600 p-8">
+      <Checker />
       {showCreate && (
         <div className="inset-0 fixed flex justify-center items-center bg-black bg-opacity-50 z-50">
           <div className="relative bg-white rounded-lg shadow-xl p-6 flex flex-col justify-center items-center">
@@ -134,7 +136,7 @@ const DashboardPage = () => {
       {going && (
         <div className="inset-0 fixed flex justify-center items-center bg-black bg-opacity-50 z-50">
           <h1 className="text-center text-2xl text-white">
-            Going to Cnavas Lets go...
+            Going to Canvas...
           </h1>
         </div>
       )}
