@@ -1,6 +1,7 @@
+"use client";
+
 import { RoomCanvas } from "../../../components/RoomCanvas";
 
-export default async function Page({ params }: { params: { roomId: string } }) {
-  // You no longer need to await params here because Next.js passes params as an object.
+export default function Page({ params }: { params: { roomId: string } }) {
   return <RoomCanvas RoomId={params.roomId} />;
 }
