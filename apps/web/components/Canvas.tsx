@@ -13,7 +13,7 @@ import { FaHandBackFist } from "react-icons/fa6";
 import React, { useEffect, useRef, useState } from "react";
 import { initDraw } from "../draw";
 import { WebSocketService } from "../hooks/WebSocketService";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 
 export function Canvas({
   RoomId,
