@@ -152,7 +152,7 @@ const DashboardPage = () => {
         </div>
         {welcome && (
           <div className="bg-white rounded-lg shadow-xl p-6">
-            <p className="text-gray-700">Welcome Sameer!</p>
+            <p className="text-gray-700">Welcome to Excalidraw by Sameer!</p>
           </div>
         )}
         {loading ? (
