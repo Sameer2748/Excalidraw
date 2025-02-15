@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import { Backend_url } from "../app/config";
 import { toast, Toaster } from "sonner";
-import Checker from "../hooks/Checker";
 
 const AuthPage = ({ isSignIn }: { isSignIn: boolean }) => {
   const Router = useRouter();
@@ -45,7 +44,6 @@ const AuthPage = ({ isSignIn }: { isSignIn: boolean }) => {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-blue-500 to-purple-600 flex justify-center items-center p-4">
-      <Checker />
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-8">
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-center text-gray-800">
