@@ -12,13 +12,13 @@ const Navbar = (): JSX.Element => {
           </div>
           <div className="flex items-center gap-4">
             <button
-              className="text-gray-600 hover:text-primary"
+              className="text-gray-600 hover:text-primary p-2 rounded-xl"
               onClick={() => Router.push("/signIn")}
             >
               Sign In
             </button>
             <button
-              className="bg-primary hover:bg-primary-hover text-white"
+              className="bg-primary hover:bg-primary-hover text-white p-2 rounded-xl"
               onClick={() => Router.push("/signUp")}
             >
               Sign Up

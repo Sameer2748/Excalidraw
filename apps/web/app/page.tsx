@@ -17,10 +17,10 @@ const Index = (): JSX.Element => {
             whiteboard tool
           </p>
           <div className="flex gap-4 justify-center animate-fade-up">
-            <button className="bg-primary hover:bg-primary-hover text-white">
+            <button className="bg-primary hover:bg-primary-hover text-white p-2 rounded-xl">
               Try Now - Its Free
             </button>
-            <button className="border-primary text-primary hover:bg-primary/10">
+            <button className="border-primary text-primary hover:bg-primary/10 p-2 rounded-xl">
               Watch Demo
             </button>
           </div>
