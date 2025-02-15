@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "postinstall": "cd packages/db && npx prisma generate",
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
