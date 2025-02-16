@@ -3,7 +3,7 @@
 import { BiRectangle } from "react-icons/bi";
 import { FaRegCircle } from "react-icons/fa";
 import { IoArrowForwardOutline } from "react-icons/io5";
-
+import { BsPencil } from "react-icons/bs";
 import { CgShapeRhombus } from "react-icons/cg";
 import { PiMinusBold } from "react-icons/pi";
 import { BsThreeDots } from "react-icons/bs";
@@ -93,7 +93,9 @@ export function Canvas({
         width={8000}
         height={8000}
         ref={canvasRef}
-        className="bg-black relative cursor-crosshair"
+        className={`bg-black relative ${
+          currentShape === "Pencil" ? "cursor-pencil" : "cursor-crosshair"
+        }`}
       />
       <div className="fixed top-[40%] left-2 flex flex-col justify-between  bg-[#232329] text-white text-sm gap-2 p-2 rounded">
         <div className=" flex flex-col gap-1">
@@ -221,6 +223,14 @@ export function Canvas({
             currentShape === "RegularPolygon" ? "bg-blue-500" : ""
           } text-black cursor-pointer`}
           size={29}
+        />
+        <BsPencil
+          color="white"
+          onClick={() => setCurrentShape("Pencil")}
+          className={`p-1 rounded ${
+            currentShape === "Pencil" ? "bg-blue-500" : ""
+          } text-black cursor-pointer`}
+          size={25}
         />
         <BsPencilSquare
           color="white"

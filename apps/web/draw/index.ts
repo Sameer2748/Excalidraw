@@ -86,6 +86,14 @@ type Shape =
       text: string;
       fontSize: number;
       color?: string;
+    }
+  | {
+      id?: number;
+      type: "Pencil";
+      points: Point[];
+      color?: string;
+      border?: number;
+      style?: string;
     };
 
 export function initDraw(
@@ -122,6 +130,8 @@ export function initDraw(
   const HIGHLIGHT_PADDING = 10;
   const HIGHLIGHT_COLOR = "#2196F3";
   let highlightedShape: number | null = null;
+  let currentPath: Point[] = [];
+  let isDrawing = false;
 
   if (!ctx) return { cleanup: () => {}, setCurrentShape: () => {} };
 
@@ -388,7 +398,13 @@ export function initDraw(
           y >= bounds.y - selectionPadding &&
           y <= bounds.y + bounds.height + selectionPadding
         );
-
+      case "Pencil": {
+        // Check if point is near any point in the path
+        return shape.points.some(
+          (point) =>
+            Math.hypot(x - point.x, y - point.y) <= 5 + selectionPadding
+        );
+      }
       default:
         return false;
     }
@@ -470,6 +486,8 @@ export function initDraw(
         return clickX - shape.startX;
       case "Input":
         return clickX - shape.x;
+      case "Pencil":
+        return clickX - shape.points[0].x;
       default:
         return 0;
     }
@@ -487,6 +505,9 @@ export function initDraw(
         return clickY - shape.startY;
       case "Input":
         return clickY - shape.y;
+      case "Pencil":
+        return clickY - shape.points[0].y;
+
       default:
         return 0;
     }
@@ -496,6 +517,12 @@ export function initDraw(
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+    if (currentShape === "Pencil") {
+      clicked = true;
+      isDrawing = true;
+      currentPath = [{ x, y }];
+      return;
+    }
 
     if (currentShape === "Hand") {
       highlightedShape = null;
@@ -579,8 +606,58 @@ export function initDraw(
 
   const mouseupHandler = async (e: MouseEvent) => {
     if (!clicked) return;
-    clicked = false;
+    if (currentShape === "Pencil" && isDrawing) {
+      const rect = canvas.getBoundingClientRect();
+      const currentX = e.clientX - rect.left;
+      const currentY = e.clientY - rect.top;
 
+      // Add final point
+      currentPath.push({ x: currentX, y: currentY });
+
+      if (currentPath.length > 1) {
+        const shape: Shape = {
+          type: "Pencil",
+          points: [...currentPath], // Create a copy of the points array
+          color: currentColor,
+          border: currentBorder,
+          style: currentStyle,
+        };
+
+        try {
+          const response = await axios.post(
+            `${Backend_url}/room/${RoomId}/shape`,
+            {
+              message: JSON.stringify(shape),
+            },
+            {
+              headers: { Authorization: `${localStorage.getItem("token")}` },
+            }
+          );
+
+          const shapeWithId = {
+            ...shape,
+            id: response.data.id,
+          };
+
+          Shapes.push(shapeWithId);
+          isDrawing = false;
+
+          wsService.send({
+            type: "chat",
+            roomId: RoomId,
+            message: JSON.stringify(shapeWithId),
+          });
+
+          drawCanvas();
+        } catch (error) {
+          console.error("Error creating pencil shape:", error);
+        }
+      }
+
+      currentPath = [];
+    }
+
+    clicked = false;
     // If we're handling text input, return early
     if (textInputActive || currentShape === "Input") return;
 
@@ -708,6 +785,27 @@ export function initDraw(
     const rect = canvas.getBoundingClientRect();
     const currentX = e.clientX - rect.left;
     const currentY = e.clientY - rect.top;
+
+    if (currentShape === "Pencil" && isDrawing) {
+      currentPath.push({ x: currentX, y: currentY });
+
+      // Redraw the entire canvas
+      drawCanvas();
+
+      // Draw the current pencil path
+      ctx.beginPath();
+      ctx.strokeStyle = currentColor;
+      ctx.lineWidth = currentBorder;
+      ctx.setLineDash(getDashPattern());
+      ctx.moveTo(currentPath[0].x, currentPath[0].y);
+
+      for (let i = 1; i < currentPath.length; i++) {
+        ctx.lineTo(currentPath[i].x, currentPath[i].y);
+      }
+
+      ctx.stroke();
+      return;
+    }
 
     if (currentShape === "Hand" && selectedShape !== null) {
       const shape = Shapes[selectedShape.index];
@@ -1072,6 +1170,14 @@ export function initDraw(
         case "Input":
           ctx.font = `${shape.fontSize}px Arial`;
           ctx.fillText(shape.text, shape.x, shape.y);
+          break;
+        case "Pencil":
+          ctx.beginPath();
+          ctx.moveTo(shape.points[0].x, shape.points[0].y);
+          for (let i = 1; i < shape.points.length; i++) {
+            ctx.lineTo(shape.points[i].x, shape.points[i].y);
+          }
+          ctx.stroke();
           break;
       }
       if (highlightedShape === index) {
