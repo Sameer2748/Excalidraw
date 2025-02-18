@@ -14,6 +14,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { initDraw } from "../draw";
 import { WebSocketService } from "../hooks/WebSocketService";
 import { useRouter } from "next/navigation";
+import AiModal from "./AiModal";
 
 export function Canvas({
   RoomId,
@@ -30,6 +31,7 @@ export function Canvas({
   const [currentColor, setCurrentColor] = useState("white");
   const [currentStyle, setCurrentStyle] = useState("normal");
   const [currentSize, setCurrentSize] = useState(1);
+  const [OpenAiShape, setOpenAiShape] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -240,7 +242,27 @@ export function Canvas({
           size={29}
           onClick={() => setCurrentShape("Input")}
         />
+        {/* <div
+          className="flex gap-2 cursor-pointer"
+          onClick={() => setOpenAiShape((prev) => !prev)}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+            viewBox="0 0 64 64"
+            className="w-5 h-5"
+            fill="#fff"
+          >
+            <path d="M22.625 2c0 15.834-8.557 30-20.625 30 12.068 0 20.625 14.167 20.625 30 0-15.833 8.557-30 20.625-30-12.068 0-20.625-14.166-20.625-30M47 32c0 7.918-4.277 15-10.313 15C42.723 47 47 54.084 47 62c0-7.916 4.277-15 10.313-15C51.277 47 47 39.918 47 32zM51.688 2c0 7.917-4.277 15-10.313 15 6.035 0 10.313 7.084 10.313 15 0-7.916 4.277-15 10.313-15-6.036 0-10.313-7.083-10.313-15" />
+          </svg>
+          AI
+        </div> */}
       </div>
+      {OpenAiShape && (
+        <div className="fixed inset-0 flex items-center justify-center z-[9999] bg-black bg-opacity-50">
+          <AiModal setAiModal={() => setOpenAiShape((prev) => !prev)} />
+        </div>
+      )}
       <button
         onClick={downloadCanvasAsImage}
         className="fixed top-6 right-6 bg-white p-2 rounded text-black"

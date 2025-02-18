@@ -1,6 +1,7 @@
 import express from "express";
 import userRoutes from "./routes/login";
 import { RoomRoutes } from "./routes/room";
+import { useGenerate } from "./routes/generate";
 import cors from "cors";
 
 const app = express();
@@ -30,7 +31,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/room", RoomRoutes);
-
+app.use("/api/v1/ai", useGenerate);
 app.listen(port, () => {
   console.log("listening on port " + port);
 });
