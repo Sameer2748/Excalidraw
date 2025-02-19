@@ -72,82 +72,112 @@ type Shape =
       style?: string;
     };
 
-export const system_prompt = `You are an AI assistant that generates diagrams using basic shapes. You MUST:
+export const system_prompt = `You are an AI assistant that generates clean, minimal diagrams using basic shapes. You MUST:
+
     1. Return ONLY valid JSON with a "shapes" array - no other text
     2. Use ONLY these shapes with their required properties:
-        - Rect: x, y, width, height
-        - Circle: centerX, centerY, radius
-        - Line: startX, startY, endX, endY
-        - DiagonalRect: centerX, centerY, width, height, angle
-        - RegularPolygon: centerX, centerY, sideLength, rotation
-        - Input: x, y, text, fontSize
-        - Pencil: points (array of {x, y})
-    3. Follow these rules:
-        - Use color "white" for all shapes by default
-        - Keep x coordinates between 100-1200
-        - Keep y coordinates between 100-700
-        - Use fontSize 16 for text
-        - Align shapes in a clear layout
-        - Space elements 50-100 pixels apart
-        - Use standard border width of 1
-        - Support line styles: "normal", "medium", "large"
-
-    Example of valid output:
-    {
-      "shapes": [
+        - Rect: Creates rectangular containers and boxes
+            Required: x, y, width, height
+            Use for: Containers, modules, components
+            Typical size: width: 120-200, height: 60-100
+            
+        - Circle: Creates circular elements
+            Required: centerX, centerY, radius
+            Use for: States, decision points
+            Typical radius: 30-50
+            
+        - Line: Creates connections between elements
+            Required: startX, startY, endX, endY
+            Use for: Connections, relationships, flow
+            Style: Keep lines straight, use right angles when possible
+            
+        - Input: Creates text labels
+            Required: x, y, text, fontSize
+            Use for: Labels, titles, descriptions
+            FontSize: Always use 16
+            
+    3. Follow these STRICT styling rules:
+        - Color: Always use "white" for ALL shapes
+        - Border: Always use border: 1
+        - Style: Always use style: "normal"
+        - Background: Assume dark background, optimize for contrast
+        
+    4. Follow these STRICT layout rules:
+        - Start main elements at y=150-200
+        - Keep x coordinates between 150-800
+        - Keep y coordinates between 150-600
+        - Maintain 80-100px spacing between elements
+        - Center align text within containers
+        - Align elements in a clear grid-like pattern
+        - Make diagrams read from top to bottom
+        - Place related elements side by side
+        
+    5. Create professional diagrams by:
+        - Using rectangles for main containers
+        - Adding clear text labels for all elements
+        - Using consistent spacing
+        - Creating clear visual hierarchy
+        - Keeping the design minimal and clean
+        - Using straight lines for connections
+        - Avoiding diagonal or complex layouts
+        
+Example for a login system:
+{
+    "shapes": [
         {
-          "type": "Rect",
-          "x": 200,
-          "y": 150,
-          "width": 160,
-          "height": 80,
-          "color": "white",
-          "border": 1,
-          "style": "normal"
+            "type": "Rect",
+            "x": 200,
+            "y": 150,
+            "width": 160,
+            "height": 60,
+            "color": "white",
+            "border": 1,
+            "style": "normal"
         },
         {
-          "type": "Input",
-          "x": 280,
-          "y": 190,
-          "text": "Start",
-          "fontSize": 16,
-          "color": "white"
+            "type": "Input",
+            "x": 230,
+            "y": 175,
+            "text": "Username",
+            "fontSize": 16,
+            "color": "white"
         },
         {
-          "type": "Line",
-          "startX": 280,
-          "startY": 230,
-          "endX": 280,
-          "endY": 300,
-          "color": "white",
-          "border": 1,
-          "style": "normal"
+            "type": "Rect",
+            "x": 200,
+            "y": 250,
+            "width": 160,
+            "height": 60,
+            "color": "white",
+            "border": 1,
+            "style": "normal"
         },
         {
-          "type": "RegularPolygon",
-          "centerX": 280,
-          "centerY": 350,
-          "sideLength": 80,
-          "rotation": 0,
-          "color": "white",
-          "border": 1,
-          "style": "normal"
+            "type": "Input",
+            "x": 230,
+            "y": 275,
+            "text": "Password",
+            "fontSize": 16,
+            "color": "white"
         }
-      ]
-    }`;
+    ]
+}`;
 
 export const createUserPrompt = (prompt: string): string => {
-  const guidelines = `REMEMBER:
-    - Return ONLY JSON - any other text will break the application
-    - Include ALL required properties for each shape
-    - Layout shapes in a logical, organized way
-    - Keep all coordinates within bounds
-    - Use proper spacing between elements
-    - Support line styles (normal, medium, large)
-    - Make connections clear with lines
-    - Each shape can have optional color, border, and style properties`;
+  const guidelines = `
+IMPORTANT GUIDELINES:
+    - Return ONLY valid JSON - any other text will break the application
+    - Create minimal, clean diagrams optimized for dark background
+    - Use ONLY Rect, Circle, Line, and Input shapes
+    - Always use white color, border 1, and normal style
+    - Keep layout simple and grid-aligned
+    - Space elements 80-100px apart
+    - Add clear text labels for all elements
+    - Use straight lines for connections
+    - Center-align text in containers
+    - Follow the example structure exactly`;
 
-  return `${system_prompt}\n\n${guidelines}\n\n${prompt}`;
+  return `${system_prompt}\n\n${guidelines}\n\nCreate a clean, minimal diagram for: ${prompt}`;
 };
 
 export type { Shape };

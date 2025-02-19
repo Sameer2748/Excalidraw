@@ -21,6 +21,7 @@
     "packages/*"
   ],
   "dependencies": {
+    "mermaid": "^11.4.1",
     "next": "^15.1.0"
   }
 }

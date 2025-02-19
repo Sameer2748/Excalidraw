@@ -14,7 +14,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { initDraw } from "../draw";
 import { WebSocketService } from "../hooks/WebSocketService";
 import { useRouter } from "next/navigation";
-import AiModal from "./AiModal";
+
+import DiagramModal from "./AiModal";
 
 export function Canvas({
   RoomId,
@@ -257,10 +258,36 @@ export function Canvas({
           </svg>
           AI
         </div> */}
+
+        <svg
+          onClick={() => setOpenAiShape((prev) => !prev)}
+          className="cursor-pointer"
+          width="24"
+          height="24"
+          color="White"
+          aria-hidden="true"
+          focusable="false"
+          role="img"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2" // Corrected camelCase
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <g>
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+            <path d="M12 3l-4 7h8z"></path>
+            <path d="M17 17m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"></path>
+            <path d="M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path>
+          </g>
+        </svg>
+
+        {/* <div>AI</div> */}
       </div>
       {OpenAiShape && (
         <div className="fixed inset-0 flex items-center justify-center z-[9999] bg-black bg-opacity-50">
-          <AiModal setAiModal={() => setOpenAiShape((prev) => !prev)} />
+          <DiagramModal setModal={() => setOpenAiShape((prev) => !prev)} />
         </div>
       )}
       <button

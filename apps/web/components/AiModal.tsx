@@ -1,27 +1,65 @@
-"use client";
 import { useRef, useState } from "react";
 import axios from "axios";
 import { usePathname } from "next/navigation";
 import { CanvasShapeManager } from "../draw/canvasDraw";
 import { Backend_url } from "../app/config";
+import mermaid from "mermaid";
 
-export default function AiModal({
-  setAiModal,
+// Initialize mermaid with dark theme
+mermaid.initialize({
+  startOnLoad: true,
+  theme: "dark",
+  themeVariables: {
+    background: "#1e1e1e",
+    primaryColor: "#fff",
+    secondaryColor: "#fff",
+    tertiaryColor: "#fff",
+    noteTextColor: "#fff",
+    fontFamily: "arial",
+    fontSize: "16px",
+  },
+});
+
+export default function DiagramModal({
+  setModal,
 }: {
-  setAiModal: (s: boolean) => void;
+  setModal: (s: boolean) => void;
 }): React.JSX.Element {
   const pathname = usePathname();
-
   const roomId = pathname.split("/canvas/")[1];
   const [loading, setLoading] = useState(false);
   const [isInserting, setIsInserting] = useState(false);
   const [shapes, setShapes] = useState([]);
+  const [activeTab, setActiveTab] = useState("text");
+  const [mermaidSvg, setMermaidSvg] = useState("");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const promptRef = useRef<HTMLTextAreaElement | null>(null);
 
+  const generateDiagram = async () => {
+    if (activeTab === "text") {
+      await drawDiagramWithAI();
+    } else {
+      await renderMermaid();
+    }
+  };
+
+  const renderMermaid = async () => {
+    try {
+      setLoading(true);
+      const { svg } = await mermaid.render(
+        "diagram",
+        promptRef.current?.value || ""
+      );
+      setMermaidSvg(svg);
+    } catch (error) {
+      console.error("Error rendering Mermaid diagram:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const drawDiagramWithAI = async () => {
     try {
-      console.log("Prompt: ", promptRef.current?.value);
       setLoading(true);
       const response = await axios.post(
         `${Backend_url}/ai/generate-diagram`,
@@ -36,7 +74,6 @@ export default function AiModal({
 
       if (response.status === 200) {
         const data = JSON.parse(response.data.response);
-
         drawDiagram(data.shapes);
       }
     } catch (error) {
@@ -54,11 +91,9 @@ export default function AiModal({
     if (!ctx) return;
 
     const canvasShapeManager = new CanvasShapeManager(ctx);
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     shapes.forEach((shape) => {
-      // Convert backend shape format to match frontend Shape type
       const normalizedShape = normalizeShape(shape);
       if (normalizedShape) {
         canvasShapeManager.drawShape(normalizedShape);
@@ -68,24 +103,21 @@ export default function AiModal({
     setShapes(shapes);
   };
 
-  // Helper function to normalize shape data
   const normalizeShape = (shape: any): Shape | null => {
-    // Convert shape type to lowercase to match frontend types
     const type = shape.type.toLowerCase();
 
     switch (type) {
       case "rect":
         return {
           type: "rect",
-          startX: shape.x, // Map backend 'x' to frontend 'startX'
-          startY: shape.y, // Map backend 'y' to frontend 'startY'
+          startX: shape.x,
+          startY: shape.y,
           width: shape.width,
           height: shape.height,
           color: shape.color,
           border: shape.border,
           style: shape.style,
         };
-
       case "circle":
         return {
           type: "circle",
@@ -96,7 +128,6 @@ export default function AiModal({
           border: shape.border,
           style: shape.style,
         };
-
       case "line":
         return {
           type: "line",
@@ -108,8 +139,7 @@ export default function AiModal({
           border: shape.border,
           style: shape.style,
         };
-
-      case "input": // Handle 'Input' from backend as 'text' for frontend
+      case "input":
         return {
           type: "text",
           startX: shape.x,
@@ -118,7 +148,6 @@ export default function AiModal({
           fontSize: shape.fontSize,
           color: shape.color,
         };
-
       default:
         console.warn(`Unsupported shape type: ${shape.type}`);
         return null;
@@ -128,12 +157,33 @@ export default function AiModal({
   const saveToDB = async () => {
     try {
       setIsInserting(true);
-      const response = await axios.post(
-        `${Backend_url}/ai/diagram-to-canvas`,
-        {
+
+      let payload;
+      if (activeTab === "text") {
+        payload = {
           diagram: shapes,
           roomId: roomId,
-        },
+        };
+      } else {
+        // For Mermaid diagrams, create a special shape that contains the SVG
+        payload = {
+          diagram: [
+            {
+              type: "svg",
+              content: mermaidSvg,
+              x: 50, // Default position
+              y: 50,
+              width: 800,
+              height: 600,
+            },
+          ],
+          roomId: roomId,
+        };
+      }
+
+      const response = await axios.post(
+        `${Backend_url}/ai/diagram-to-canvas`,
+        payload,
         {
           headers: {
             Authorization: `${localStorage.getItem("token")}`,
@@ -143,72 +193,122 @@ export default function AiModal({
       );
 
       if (response.status === 200) {
-        console.log("Response:", response.data);
         setIsInserting(false);
-        setAiModal(false);
+        setModal(false);
         window.location.reload();
       }
     } catch (error) {
       console.error("Error pushing to canvas", error);
+      setIsInserting(false);
     }
   };
 
   return (
     <div
-      className="flex items-center justify-center z-[999] bg-[#232329] bg-opacity-20 backdrop-blur-md w-screen h-screen"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
       onClick={(e) => {
         if (e.currentTarget === e.target) {
-          setAiModal(false);
+          setModal(false);
         }
       }}
     >
-      <div className="flex p-9 m-2 bg-gradient-to-br from-neutral-950 to-neutral-900 border border-amethyst-500/45 rounded-xl w-full max-w-7xl h-full max-h-[80vh]">
-        {/* Left Column */}
-        <div className="flex flex-col w-1/2 pr-4">
-          {/* <Logo /> */}
-          <h1 className="text-2xl font-semibold text-amethyst-200">
-            Generate with AI
-          </h1>
-          <p className="text-gray-400 text-start text-sm mb-6">
-            Enter a prompt and generate a diagram with AI!
-          </p>
-
-          <div className="relative mb-4">
-            <textarea
-              ref={promptRef}
-              placeholder="E.g. Draw a flow chart for authentication or a diagram of a system architecture"
-              className="pr-16 text-base w-full rounded-xl bg-[#141414] py-2 px-4 my-4 h-[45vh] focus-visible:ring-0 focus-visible:border-0 focus-visible:outline-none text-gray-400"
-            />
+      <div className="w-[1000px] p-6 mx-4 bg-white rounded-lg shadow-xl">
+        <div className="flex items-center gap-4 mb-4">
+          <h2 className="text-xl font-semibold text-gray-800">
+            Text to diagram
+          </h2>
+          <div className="px-2 py-1 text-xs font-medium text-purple-700 bg-purple-100 rounded">
+            AI Beta
           </div>
-
-          <div className="flex gap-2 mt-4">
+          <div className="flex ml-auto space-x-2">
             <button
-              className="w-full mt-4 text-red-500"
-              onClick={() => setAiModal(false)}
+              onClick={() => setActiveTab("text")}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                activeTab === "text"
+                  ? "bg-purple-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
             >
-              Cancel
+              Text to diagram
             </button>
-            <button className="w-full mt-4" onClick={drawDiagramWithAI}>
-              {loading ? "Generating..." : "Generate"}
-            </button>
+            {/* <button
+              onClick={() => setActiveTab("mermaid")}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                activeTab === "mermaid"
+                  ? "bg-purple-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              Mermaid
+            </button> */}
           </div>
         </div>
 
-        {/* Right Column */}
-        <div className="w-1/2 flex flex-col">
-          <canvas
-            ref={canvasRef}
-            width={800}
-            height={600}
-            className="bg-[#121212] flex-grow"
-            style={{ background: "#121212" }}
-          />
-          <button
-            className="mt-4 self-center w-full"
-            onClick={() => saveToDB()}
-          >
-            {isInserting ? "Inserting..." : "Insert"}
-          </button>
+        <div className="flex gap-8">
+          <div className="flex-1">
+            <p className="mb-4 text-sm text-gray-600">
+              {activeTab === "text"
+                ? "Currently we use Mermaid as a middle step, so you'll get best results if you describe a diagram, workflow, flow chart, and similar."
+                : "Currently only Flowchart, Sequence, and Class Diagrams are supported. The other types will be rendered as image in Excalidraw."}
+            </p>
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700">
+                {activeTab === "text" ? "Prompt" : "Mermaid Syntax"}
+              </label>
+              <textarea
+                ref={promptRef}
+                className="w-full h-[400px] mt-1 p-3 text-sm font-mono border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-gray-50"
+                placeholder={
+                  activeTab === "text"
+                    ? "Describe what you want to see..."
+                    : "Enter Mermaid syntax here..."
+                }
+              />
+            </div>
+
+            <button
+              onClick={generateDiagram}
+              className="inline-flex items-center px-4 py-2 mt-4 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+            >
+              {loading ? (
+                "Generating..."
+              ) : (
+                <>
+                  Generate
+                  <span className="ml-2 text-xs">Cmd + Enter</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className="flex-1">
+            <div className="mb-4">
+              <h3 className="text-sm font-medium text-gray-700">Preview</h3>
+            </div>
+            <div className="relative h-[400px] bg-[#1e1e1e] rounded-lg overflow-hidden">
+              {activeTab === "text" ? (
+                <canvas
+                  ref={canvasRef}
+                  width={800}
+                  height={600}
+                  className="w-full h-full"
+                />
+              ) : (
+                <div
+                  className="w-full h-full p-4 text-white"
+                  dangerouslySetInnerHTML={{ __html: mermaidSvg }}
+                />
+              )}
+            </div>
+            <button
+              onClick={saveToDB}
+              disabled={!shapes.length && !mermaidSvg}
+              className="w-full mt-4 px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              {isInserting ? "Inserting..." : "Insert"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
