@@ -1,8 +1,10 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createUserPrompt, system_prompt } from "./prompt";
 
-const apiKey = "AIzaSyDI_WkBS4Vowuj6XTHOldUFTLXN8CzNkVs";
-const genAI = new GoogleGenerativeAI(apiKey!);
+const genAI = new GoogleGenerativeAI(process.env.API_KEY!);
 
 // Create a single model instance
 const model = genAI.getGenerativeModel({
