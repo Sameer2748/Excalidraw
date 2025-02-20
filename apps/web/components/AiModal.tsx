@@ -22,8 +22,10 @@ mermaid.initialize({
 
 export default function DiagramModal({
   setModal,
+  canvasReff,
 }: {
   setModal: (s: boolean) => void;
+  canvasReff: React.RefObject<HTMLCanvasElement>;
 }): React.JSX.Element {
   const pathname = usePathname();
   const roomId = pathname.split("/canvas/")[1];
@@ -154,51 +156,139 @@ export default function DiagramModal({
     }
   };
 
+  const addShapesToMainCanvas = (shapes: any[]) => {
+    if (!canvasReff.current) return;
+
+    const ctx = canvasReff.current.getContext("2d");
+    if (!ctx) return;
+
+    const canvasShapeManager = new CanvasShapeManager(ctx);
+
+    // Calculate the center of the main canvas
+    const canvasCenterX = canvasReff.current.width / 2;
+    const canvasCenterY = canvasReff.current.height / 2;
+
+    // Calculate the bounding box of all shapes
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+    shapes.forEach((shape) => {
+      const x = shape.x || shape.startX || shape.centerX || 0;
+      const y = shape.y || shape.startY || shape.centerY || 0;
+      const width = shape.width || shape.radius * 2 || 0;
+      const height = shape.height || shape.radius * 2 || 0;
+
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x + width);
+      maxY = Math.max(maxY, y + height);
+    });
+
+    // Calculate the offset to center the shapes
+    const shapesWidth = maxX - minX;
+    const shapesHeight = maxY - minY;
+    const offsetX = canvasCenterX - shapesWidth / 2 - minX;
+    const offsetY = canvasCenterY - shapesHeight / 2 - minY;
+
+    // Add shapes to the main canvas with the calculated offset
+    shapes.forEach((shape) => {
+      const adjustedShape = {
+        ...shape,
+        x: (shape.x || shape.startX || shape.centerX || 0) + offsetX,
+        y: (shape.y || shape.startY || shape.centerY || 0) + offsetY,
+        startX: shape.startX ? shape.startX + offsetX : undefined,
+        startY: shape.startY ? shape.startY + offsetY : undefined,
+        endX: shape.endX ? shape.endX + offsetX : undefined,
+        endY: shape.endY ? shape.endY + offsetY : undefined,
+        centerX: shape.centerX ? shape.centerX + offsetX : undefined,
+        centerY: shape.centerY ? shape.centerY + offsetY : undefined,
+      };
+
+      const normalizedShape = normalizeShape(adjustedShape);
+      if (normalizedShape) {
+        canvasShapeManager.drawShape(normalizedShape);
+      }
+    });
+  };
+
   const saveToDB = async () => {
     try {
       setIsInserting(true);
 
-      let payload;
       if (activeTab === "text") {
-        payload = {
-          diagram: shapes,
-          roomId: roomId,
-        };
-      } else {
-        // For Mermaid diagrams, create a special shape that contains the SVG
-        payload = {
-          diagram: [
-            {
-              type: "svg",
-              content: mermaidSvg,
-              x: 50, // Default position
-              y: 50,
-              width: 800,
-              height: 600,
-            },
-          ],
-          roomId: roomId,
-        };
-      }
+        // Add shapes to the main canvas
+        addShapesToMainCanvas(shapes);
 
-      const response = await axios.post(
-        `${Backend_url}/ai/diagram-to-canvas`,
-        payload,
-        {
-          headers: {
-            Authorization: `${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
+        // Save to database
+        const response = await axios.post(
+          `${Backend_url}/ai/diagram-to-canvas`,
+          {
+            diagram: shapes,
+            roomId: roomId,
           },
-        }
-      );
+          {
+            headers: {
+              Authorization: `${localStorage.getItem("token")}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
-      if (response.status === 200) {
-        setIsInserting(false);
-        setModal(false);
-        window.location.reload();
+        if (response.status === 200) {
+          setIsInserting(false);
+          setModal(false);
+        }
+      } else {
+        // Handle Mermaid SVG
+        const svgShape = {
+          type: "svg",
+          content: mermaidSvg,
+          x: 50,
+          y: 50,
+          width: 800,
+          height: 600,
+        };
+
+        const response = await axios.post(
+          `${Backend_url}/ai/diagram-to-canvas`,
+          {
+            diagram: [svgShape],
+            roomId: roomId,
+          },
+          {
+            headers: {
+              Authorization: `${localStorage.getItem("token")}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (response.status === 200) {
+          // Add SVG to main canvas
+          if (canvasReff.current) {
+            const ctx = canvasReff.current.getContext("2d");
+            if (ctx) {
+              const img = new Image();
+              img.onload = () => {
+                ctx.drawImage(
+                  img,
+                  svgShape.x,
+                  svgShape.y,
+                  svgShape.width,
+                  svgShape.height
+                );
+              };
+              img.src = "data:image/svg+xml;base64," + btoa(mermaidSvg);
+            }
+          }
+
+          setIsInserting(false);
+          setModal(false);
+        }
       }
     } catch (error) {
-      console.error("Error pushing to canvas", error);
+      console.error("Error saving diagram:", error);
       setIsInserting(false);
     }
   };

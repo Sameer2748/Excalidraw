@@ -34,6 +34,30 @@ export function Canvas({
   const [currentSize, setCurrentSize] = useState(1);
   const [OpenAiShape, setOpenAiShape] = useState(false);
 
+  const centerCanvas = () => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+
+    if (!canvas || !container) return;
+
+    // Get the canvas and container dimensions
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+
+    // Calculate the scroll position to center the canvas
+    const scrollX = (canvasWidth - containerWidth) / 2;
+    const scrollY = (canvasHeight - containerHeight) / 2;
+
+    // Scroll the container to the center
+    container.scrollTo({
+      left: scrollX,
+      top: scrollY,
+      behavior: "smooth",
+    });
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -46,6 +70,8 @@ export function Canvas({
     if (!drawInstanceRef.current) {
       drawInstanceRef.current = initDraw(canvas, RoomId, socket);
     }
+
+    centerCanvas();
 
     return () => {
       if (drawInstanceRef.current) {
@@ -88,6 +114,10 @@ export function Canvas({
       link.download = "canvas-image.png"; // Filename for the downloaded image
       link.click();
     }
+  };
+
+  const movetocenterofcanvas = () => {
+    centerCanvas();
   };
 
   return (
@@ -283,11 +313,18 @@ export function Canvas({
           </g>
         </svg>
 
+        <button onClick={movetocenterofcanvas} className="text-white">
+          reset
+        </button>
+
         {/* <div>AI</div> */}
       </div>
       {OpenAiShape && (
         <div className="fixed inset-0 flex items-center justify-center z-[9999] bg-black bg-opacity-50">
-          <DiagramModal setModal={() => setOpenAiShape((prev) => !prev)} />
+          <DiagramModal
+            canvasReff={canvasRef}
+            setModal={() => setOpenAiShape((prev) => !prev)}
+          />
         </div>
       )}
       <button
