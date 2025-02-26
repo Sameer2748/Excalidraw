@@ -121,12 +121,12 @@ export const system_prompt = `You are an AI assistant that generates clean, mini
         - Using straight lines for connections
         - Avoiding diagonal or complex layouts
         
-Example for a login system:
+Example for a NodeJS server development and deployment flow:
 {
     "shapes": [
         {
             "type": "Rect",
-            "x": 200,
+            "x": 400,
             "y": 150,
             "width": 160,
             "height": 60,
@@ -136,15 +136,25 @@ Example for a login system:
         },
         {
             "type": "Input",
-            "x": 230,
+            "x": 430,
             "y": 175,
-            "text": "Username",
+            "text": "Setup IDE",
             "fontSize": 16,
             "color": "white"
         },
         {
+            "type": "Line",
+            "startX": 480,
+            "startY": 210,
+            "endX": 480,
+            "endY": 250,
+            "color": "white",
+            "border": 1,
+            "style": "normal"
+        },
+        {
             "type": "Rect",
-            "x": 200,
+            "x": 400,
             "y": 250,
             "width": 160,
             "height": 60,
@@ -154,9 +164,167 @@ Example for a login system:
         },
         {
             "type": "Input",
-            "x": 230,
+            "x": 430,
             "y": 275,
-            "text": "Password",
+            "text": "Initialize NodeJS",
+            "fontSize": 16,
+            "color": "white"
+        },
+        {
+            "type": "Line",
+            "startX": 480,
+            "startY": 310,
+            "endX": 480,
+            "endY": 330,
+            "color": "white",
+            "border": 1,
+            "style": "normal"
+        },
+        {
+            "type": "Rect",
+            "x": 200,
+            "y": 330,
+            "width": 160,
+            "height": 60,
+            "color": "white",
+            "border": 1,
+            "style": "normal"
+        },
+        {
+            "type": "Rect",
+            "x": 600,
+            "y": 330,
+            "width": 160,
+            "height": 60,
+            "color": "white",
+            "border": 1,
+            "style": "normal"
+        },
+        {
+            "type": "Input",
+            "x": 230,
+            "y": 355,
+            "text": "MongoDB",
+            "fontSize": 16,
+            "color": "white"
+        },
+        {
+            "type": "Input",
+            "x": 630,
+            "y": 355,
+            "text": "PostgreSQL",
+            "fontSize": 16,
+            "color": "white"
+        },
+        {
+            "type": "Line",
+            "startX": 280,
+            "startY": 390,
+            "endX": 280,
+            "endY": 430,
+            "color": "white",
+            "border": 1,
+            "style": "normal"
+        },
+        {
+            "type": "Line",
+            "startX": 680,
+            "startY": 390,
+            "endX": 680,
+            "endY": 430,
+            "color": "white",
+            "border": 1,
+            "style": "normal"
+        },
+        {
+            "type": "Rect",
+            "x": 400,
+            "y": 430,
+            "width": 160,
+            "height": 60,
+            "color": "white",
+            "border": 1,
+            "style": "normal"
+        },
+        {
+            "type": "Input",
+            "x": 440,
+            "y": 455,
+            "text": "CI/CD Setup",
+            "fontSize": 16,
+            "color": "white"
+        },
+        {
+            "type": "Line",
+            "startX": 480,
+            "startY": 490,
+            "endX": 480,
+            "endY": 510,
+            "color": "white",
+            "border": 1,
+            "style": "normal"
+        },
+        {
+            "type": "Rect",
+            "x": 400,
+            "y": 510,
+            "width": 160,
+            "height": 60,
+            "color": "white",
+            "border": 1,
+            "style": "normal"
+        },
+        {
+            "type": "Input",
+            "x": 420,
+            "y": 535,
+            "text": "Cloud Deployment",
+            "fontSize": 16,
+            "color": "white"
+        },
+        {
+            "type": "Line",
+            "startX": 480,
+            "startY": 570,
+            "endX": 480,
+            "endY": 590,
+            "color": "white",
+            "border": 1,
+            "style": "normal"
+        },
+        {
+            "type": "Rect",
+            "x": 200,
+            "y": 590,
+            "width": 160,
+            "height": 60,
+            "color": "white",
+            "border": 1,
+            "style": "normal"
+        },
+        {
+            "type": "Rect",
+            "x": 600,
+            "y": 590,
+            "width": 160,
+            "height": 60,
+            "color": "white",
+            "border": 1,
+            "style": "normal"
+        },
+        {
+            "type": "Input",
+            "x": 220,
+            "y": 615,
+            "text": "Vertical Scaling",
+            "fontSize": 16,
+            "color": "white"
+        },
+        {
+            "type": "Input",
+            "x": 620,
+            "y": 615,
+            "text": "Horizontal Scaling",
             "fontSize": 16,
             "color": "white"
         }

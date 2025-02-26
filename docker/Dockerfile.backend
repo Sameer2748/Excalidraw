@@ -1,0 +1,39 @@
+# Use Node.js base image
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Set environment variables
+ARG DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL}
+
+# Install pnpm globally
+RUN npm install -g pnpm
+
+# Copy package manager files for caching
+COPY package.json pnpm-lock.yaml turbo.json ./
+
+# Copy the full project
+COPY . .
+
+# Install dependencies for the whole monorepo
+RUN pnpm install --frozen-lockfile
+
+# Ensure Prisma is installed & generate client
+RUN pnpm --filter backend add -D prisma@6.4.1 @prisma/client@6.4.1
+
+# Run database migrations
+RUN pnpm run db:migrate
+
+# Build the backend before running
+RUN pnpm --filter backend run build
+
+# Set working directory to backend
+WORKDIR /app/apps/backend
+
+# Expose the backend port
+EXPOSE 8083
+
+# Start the backend server
+CMD ["pnpm", "run", "start"]

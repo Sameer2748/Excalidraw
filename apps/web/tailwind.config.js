@@ -34,6 +34,13 @@ export default {
           foreground: "#FFFFFF",
         },
       },
+      backgroundSize: {
+        "size-200": "200% 200%",
+      },
+      backgroundPosition: {
+        "pos-0": "0% 0%",
+        "pos-100": "100% 100%",
+      },
       keyframes: {
         "fade-up": {
           "0%": {
@@ -45,9 +52,21 @@ export default {
             transform: "translateY(0)",
           },
         },
+        "border-flow": {
+          "0%": {
+            backgroundPosition: "0% 50%",
+          },
+          "50%": {
+            backgroundPosition: "100% 50%",
+          },
+          "100%": {
+            backgroundPosition: "0% 50%",
+          },
+        },
       },
       animation: {
         "fade-up": "fade-up 0.5s ease-out",
+        "border-flow": "border-flow 8s ease infinite",
       },
     },
   },
